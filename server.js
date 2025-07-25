@@ -97,7 +97,8 @@ function isValidSearchTerm(input) {
 
   // Additional character validation
   // Reject input with dangerous control characters and HTML brackets
-  const suspiciousChars = /<|>|[\x00-\x08]|\x0b|\x0c|[\x0e-\x1f]|[\x7f-\x9f]/;
+  // Using character codes to avoid embedding control characters in source
+  const suspiciousChars = new RegExp('[<>\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]');
   if (suspiciousChars.test(input)) {
     console.log(`Suspicious characters detected: ${input}`);
     return false;
