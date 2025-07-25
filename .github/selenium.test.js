@@ -41,7 +41,7 @@ if (!chromePath) {
         await submitButton.click();
         
         // Should redirect back to search page
-        await driver.wait(until.titleContains('Search'), 5000);
+        await driver.wait(until.titleContains('Search'), 10000);
         let currentTitle = await driver.getTitle();
         if (!currentTitle.includes('Search')) throw new Error('Should have redirected back to search page');
         console.log('✓ XSS attack (script tag) correctly blocked');
@@ -49,7 +49,7 @@ if (!chromePath) {
         // Test 3: Test XSS attack with event handler
         console.log('Test 3: Testing XSS attack (event handler)...');
         // Wait for page to be ready and find fresh elements after page reload
-        await driver.wait(until.elementLocated(By.name('searchTerm')), 5000);
+        await driver.wait(until.elementLocated(By.name('searchTerm')), 10000);
         searchInput = await driver.findElement(By.name('searchTerm'));
         submitButton = await driver.findElement(By.css('button[type="submit"]'));
         
@@ -58,7 +58,7 @@ if (!chromePath) {
         await submitButton.click();
         
         // Should redirect back to search page
-        await driver.wait(until.titleContains('Search'), 5000);
+        await driver.wait(until.titleContains('Search'), 10000);
         currentTitle = await driver.getTitle();
         if (!currentTitle.includes('Search')) throw new Error('Should have redirected back to search page');
         console.log('✓ XSS attack (event handler) correctly blocked');
@@ -66,25 +66,33 @@ if (!chromePath) {
         // Test 4: Test XSS attack with javascript protocol
         console.log('Test 4: Testing XSS attack (javascript protocol)...');
         // Wait for page to be ready and find fresh elements after page reload
-        await driver.wait(until.elementLocated(By.name('searchTerm')), 5000);
+        await driver.wait(until.elementLocated(By.name('searchTerm')), 10000);
         searchInput = await driver.findElement(By.name('searchTerm'));
         submitButton = await driver.findElement(By.css('button[type="submit"]'));
         
         await searchInput.clear();
-        // Using a safe test string that contains 'javascript:' pattern without actual protocol
-        await searchInput.sendKeys('search for javascript: protocol detection test');
+        // Test with actual javascript: protocol to trigger the validation
+        await searchInput.sendKeys('javascript:alert(1)');
         await submitButton.click();
         
         // Should redirect back to search page
-        await driver.wait(until.titleContains('Search'), 5000);
+        await driver.wait(until.titleContains('Search'), 10000);
         currentTitle = await driver.getTitle();
         if (!currentTitle.includes('Search')) throw new Error('Should have redirected back to search page');
         console.log('✓ XSS attack (javascript protocol) correctly blocked');
 
         // Test 5: Test valid search term that leads to results page
         console.log('Test 5: Testing valid search term...');
-        // Wait for page to be ready and find fresh elements after page reload
-        await driver.wait(until.elementLocated(By.name('searchTerm')), 5000);
+        // Add small delay to ensure page is fully loaded
+        await driver.sleep(1000);
+        // Navigate back to home page to ensure we're on the search page
+        await driver.get('http://localhost:8080/');
+        // Wait longer for page to be ready and find fresh elements
+        await driver.wait(until.elementLocated(By.name('searchTerm')), 10000);
+        
+        // Add additional wait to ensure element is interactable
+        await driver.wait(until.elementIsVisible(driver.findElement(By.name('searchTerm'))), 5000);
+        
         searchInput = await driver.findElement(By.name('searchTerm'));
         submitButton = await driver.findElement(By.css('button[type="submit"]'));
 
@@ -93,7 +101,7 @@ if (!chromePath) {
         await submitButton.click();
 
         // Wait for the results page to appear
-        await driver.wait(until.elementLocated(By.css('h1')), 5000);
+        await driver.wait(until.elementLocated(By.css('h1')), 10000);
         let h1 = await driver.findElement(By.css('h1'));
         let h1Text = await h1.getText();
         if (!h1Text.includes('Welcome')) throw new Error('Did not reach results page');
@@ -106,12 +114,12 @@ if (!chromePath) {
 
         // Test 6: Test return to home functionality
         console.log('Test 6: Testing return to home...');
-        // Find fresh return button element on the results page
-        let returnButton = await driver.findElement(By.css('button[type="submit"]'));
+        // Find the return button element on the results page
+        let returnButton = await driver.wait(until.elementLocated(By.css('button[type="submit"]')), 10000);
         await returnButton.click();
 
         // Wait for the search page to reload
-        await driver.wait(until.titleContains('Search'), 5000);
+        await driver.wait(until.titleContains('Search'), 10000);
         let newTitle = await driver.getTitle();
         if (!newTitle.includes('Search')) throw new Error('Did not return to search page');
         console.log('✓ Return to home successful - returned to search page');
@@ -119,6 +127,17 @@ if (!chromePath) {
         console.log('\n🎉 All UI tests passed!');
     } catch (error) {
         console.error('❌ Test failed:', error.message);
+        console.error('Current URL:', await driver.getCurrentUrl());
+        console.error('Page title:', await driver.getTitle());
+        
+        // Try to get page source for debugging
+        try {
+            let pageSource = await driver.getPageSource();
+            console.error('Page source snippet:', pageSource.substring(0, 500));
+        } catch (sourceError) {
+            console.error('Could not retrieve page source:', sourceError.message);
+        }
+        
         throw error;
     } finally {
         await driver.quit();

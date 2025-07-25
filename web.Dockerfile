@@ -27,5 +27,5 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Expose port and start app
-EXPOSE 8080
+EXPOSE 80
 CMD ["npm", "start"]
