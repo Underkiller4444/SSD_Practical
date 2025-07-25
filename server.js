@@ -95,15 +95,6 @@ function isValidSearchTerm(input) {
     }
   }
 
-  // Additional character validation
-  // Reject input with dangerous control characters and HTML brackets
-  // Using character codes to avoid embedding control characters in source
-  const suspiciousChars = new RegExp('[<>\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]');
-  if (suspiciousChars.test(input)) {
-    console.log(`Suspicious characters detected: ${input}`);
-    return false;
-  }
-
   // Length validation (prevent DoS)
   if (input.length > 1000) {
     console.log(`Input too long: ${input.length} characters`);
@@ -111,6 +102,7 @@ function isValidSearchTerm(input) {
   }
 
   // Whitelist approach - only allow alphanumeric, spaces, and safe punctuation
+  // This will automatically block HTML brackets and control characters
   const allowedPattern = /^[a-zA-Z0-9\s\-_.,:;!?()[\]{}]+$/;
   if (!allowedPattern.test(input)) {
     console.log(`Invalid characters in input: ${input}`);

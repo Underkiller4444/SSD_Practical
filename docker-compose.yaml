@@ -17,9 +17,7 @@ services:
       - "3000:3000"  # Expose port 3000 for accessing the Git server
     volumes:
       - ./repos:/var/www/git  # Persist repositories data in the `./repos` directory
-    # environment:
-    #   GIT_SERVER_USER: "elizabeth"  # Optional: set default user for Git
-    #   GIT_SERVER_USER_PASSWORD: "password"  # Optional: set password for Git user
+
 
 
   sonarqube:
