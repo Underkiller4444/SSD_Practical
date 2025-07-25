@@ -1,0 +1,81 @@
+name: Node.js Selenium Testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-modules
+
+      - name: Install Node.js dependencies
+        run: npm install
+
+      - name: Prepare artifacts
+        run: |
+          tar -czvf www-build.tar.gz server.js views/index.html public/welcome.html xato-net-10-million-passwords-1000.txt package.json .github/selenium.test.js
+          ls -l
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: www-build
+          path: www-build.tar.gz
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download built files
+        uses: actions/download-artifact@v4
+        with:
+          name: www-build
+
+      - name: Extract artifacts
+        run: |
+          tar -xzvf www-build.tar.gz
+          ls -l .github
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start Node.js server
+        run: |
+          node server.js &
+          SERVER_PID=$!
+          echo "Server started with PID: $SERVER_PID"
+          sleep 10
+          echo "Checking if server is still running..."
+          ps aux | grep node || echo "No node processes found"
+
+      - name: Verify server is running
+        run: |
+          echo "Checking server status..."
+          netstat -tlnp | grep :8080 || echo "Port 8080 not found in netstat"
+          curl -f http://localhost:8080 || { 
+            echo "Server failed to start on port 8080"; 
+            echo "Checking what's running on port 8080:";
+            lsof -i :8080 || echo "Nothing on port 8080";
+            echo "Checking all node processes:";
+            ps aux | grep node;
+            exit 1; 
+          }
+
+      - name: Run Selenium tests
+        run: node .github/selenium.test.js
