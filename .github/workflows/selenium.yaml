@@ -28,7 +28,7 @@ jobs:
 
       - name: Prepare artifacts
         run: |
-          tar -czvf www-build.tar.gz server.js views/index.html public/welcome.html xato-net-10-million-passwords-1000.txt package.json .github/selenium.test.js
+          tar -czvf www-build.tar.gz server.js views/index.html public/welcome.html package.json .github/selenium.test.js
           ls -l
 
       - name: Upload artifacts
